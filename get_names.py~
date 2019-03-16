@@ -1,0 +1,31 @@
+import pandas as pd
+import collections
+
+data=pd.read_csv('winemag-data-130k-v2.csv',nrows=20)
+counts=data['variety'].value_counts()
+print(data.columns.values)
+
+def cnvt_clmn_words(name):
+    words = data[name]
+    words = words.str.split(' ')
+
+    return words
+
+print (cnvt_clmn_words('variety'))
+
+def get_words():
+    words=[]
+    varieties=[]
+    country=[]
+    designation=[]
+    province=[]
+    winery=[]
+
+    
+
+    
+    return words
+    
+    
+
+
