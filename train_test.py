@@ -5,11 +5,11 @@ import pandas as pd
 import numpy as np
 import multiprocessing as mp
 from sklearn.tree import DecisionTreeClassifier
-import graphviz
+# import graphviz
 from sklearn import tree
 
 
-data = pd.read_csv('winemag-data-130k-v2.csv',usecols=['variety','description'],nrows=100)
+data = pd.read_csv('resources/winemag-data-130k-v2.csv',usecols=['variety','description'],nrows=100)
 #column_list = get_names.get_words(data)
 
 def transf_counts(df):
@@ -24,7 +24,7 @@ def transf_counts(df):
 
 def read_assemble(chunksize,nrows):
     if __name__ == '__main__':
-        reader = pd.read_csv('winemag-data-130k-v2.csv',usecols=['variety','description'],chunksize=chunksize, nrows=nrows)
+        reader = pd.read_csv('resources/winemag-data-130k-v2.csv',usecols=['variety','description'],chunksize=chunksize, nrows=nrows)
         pool = mp.Pool()
         funclist = []
         for df in reader:
