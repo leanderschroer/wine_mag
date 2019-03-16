@@ -1,37 +1,41 @@
-import time
-import get_names
-import collections 
-import pandas as pd
-import numpy as np
+import collections
 import multiprocessing as mp
-from sklearn.tree import DecisionTreeClassifier
+import time
+
+import pandas as pd
+
+import get_names
+
 # import graphviz
-from sklearn import tree
 
 
-data = pd.read_csv('resources/winemag-data-130k-v2.csv',usecols=['variety','description'],nrows=100)
-#column_list = get_names.get_words(data)
+data = pd.read_csv('resources/winemag-data-130k-v2.csv', usecols=['variety', 'description'], nrows=100)
+
+
+# column_list = get_names.get_words(data)
 
 def transf_counts(df):
     counts = df['description'].str.split(' ')
     counts = counts.map(collections.Counter)
     counts = counts.to_dict()
     counts = pd.DataFrame(counts).transpose()
-    new_data = pd.concat([df[['variety']],counts],sort=False)
-    revealing_words = get_names.cnvt_clmn_words(df,'variety')
+    new_data = pd.concat([df[['variety']], counts], sort=False)
+    revealing_words = get_names.cnvt_clmn_words(df, 'variety')
     new_data = new_data[~new_data.index.isin(revealing_words)]
     return new_data
 
-def read_assemble(chunksize,nrows):
+
+def read_assemble(chunksize, nrows):
     if __name__ == '__main__':
-        reader = pd.read_csv('resources/winemag-data-130k-v2.csv',usecols=['variety','description'],chunksize=chunksize, nrows=nrows)
+        reader = pd.read_csv('resources/winemag-data-130k-v2.csv', usecols=['variety', 'description'],
+                             chunksize=chunksize, nrows=nrows)
         pool = mp.Pool()
         funclist = []
         for df in reader:
-            f = pool.apply_async(transf_counts,[df])
+            f = pool.apply_async(transf_counts, [df])
             funclist.append(f)
 
-        result=[]
+        result = []
         for f in funclist:
             result.append(f.get(timeout=60))
 
@@ -39,12 +43,10 @@ def read_assemble(chunksize,nrows):
         return new_data
     return None
 
-s=time.time()
-read_assemble(700,5000)
-print (time.time()-s)
 
-
-
+s = time.time()
+read_assemble(700, 5000)
+print(time.time() - s)
 
 # train = data.sample(frac=.8, axis = 0)
 # test = data.loc[~data.index.isin(train.index)]
@@ -53,4 +55,4 @@ print (time.time()-s)
 # predictions = model.predict(test.iloc[:,16:])
 # dot_data = tree.export_graphviz(model, label='all',  out_file=None, filled=True, rounded=True, special_characters=True, class_names=varieties, feature_names=train.iloc[:,16:].columns.values) 
 # graph = graphviz.Source(dot_data) 
-# graph.render("wine") 
+# graph.render("wine")
