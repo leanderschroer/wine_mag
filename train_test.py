@@ -1,52 +1,43 @@
-import collections
 import multiprocessing as mp
 import time
-
+from typing import Counter
+import get_names
 import pandas as pd
 
-import get_names
-
-# import graphviz
-
-
-data = pd.read_csv('resources/winemag-data-130k-v2.csv', usecols=['variety', 'description'], nrows=100)
-
-
-# column_list = get_names.get_words(data)
-
-def transf_counts(df):
-    counts = df['description'].str.split(' ')
-    counts = counts.map(collections.Counter)
-    counts = counts.to_dict()
-    counts = pd.DataFrame(counts).transpose()
-    new_data = pd.concat([df[['variety']], counts], sort=False)
-    revealing_words = get_names.cnvt_clmn_words(df, 'variety')
-    new_data = new_data[~new_data.index.isin(revealing_words)]
-    return new_data
+def format_data(data: pd.DataFrame) -> pd.DataFrame:
+    try:
+        return get_names.tokenize_except(data['description'], data['variety'])
+    except:
+        print('Error: Bad column names')
 
 
-def read_assemble(chunksize, nrows):
+def read_assemble(chunksize: int, nrows: int) -> pd.DataFrame:
     if __name__ == '__main__':
-        reader = pd.read_csv('resources/winemag-data-130k-v2.csv', usecols=['variety', 'description'],
+        reader = pd.read_csv('resources/winemag-data-130k-v2.csv',
+                             usecols=['variety', 'description'],
                              chunksize=chunksize, nrows=nrows)
+
         pool = mp.Pool()
         funclist = []
         for df in reader:
-            f = pool.apply_async(transf_counts, [df])
+            f = pool.apply_async(format_data, [df])
             funclist.append(f)
 
         result = []
         for f in funclist:
             result.append(f.get(timeout=60))
-
+        pool.close()
         new_data = pd.concat(result, ignore_index=True, sort=False)
+
         return new_data
     return None
 
 
 s = time.time()
-read_assemble(700, 5000)
+assembled_data = read_assemble(700, 1400)
 print(time.time() - s)
+if assembled_data is not None:
+    print(assembled_data.head())
 
 # train = data.sample(frac=.8, axis = 0)
 # test = data.loc[~data.index.isin(train.index)]
