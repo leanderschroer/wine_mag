@@ -1,8 +1,10 @@
+import multiprocessing
 import re
 from collections import Counter
 from typing import Dict, Iterable, Iterator
 
 import pandas as pd
+from sklearn.feature_extraction import DictVectorizer
 
 
 class WordTokenizer:
@@ -25,6 +27,4 @@ tokenizer = WordTokenizer()
 def count_tokens(description: str) -> Counter:
     return (count(tokenizer(description)))
 
-def tokenize_except(feature: pd.Series, target: pd.Series) -> pd.DataFrame:
-    return pd.concat([target,pd.DataFrame(feature.apply(count_tokens).to_list())], axis = 1)
 

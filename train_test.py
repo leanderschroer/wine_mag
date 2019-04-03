@@ -1,14 +1,19 @@
 import multiprocessing as mp
 import time
-from typing import Counter
-import get_names
+
+import gc
 import pandas as pd
+from sklearn.feature_extraction import DictVectorizer
+
+import get_names
+
 
 def format_data(data: pd.DataFrame) -> pd.DataFrame:
     try:
-        return get_names.tokenize_except(data['description'], data['variety'])
+        data['description'] = data['description'].apply(get_names.count_tokens)
+        return data
     except:
-        print('Error: Bad column names')
+        print('Error: Unspecified')
 
 
 def read_assemble(chunksize: int, nrows: int) -> pd.DataFrame:
@@ -26,18 +31,23 @@ def read_assemble(chunksize: int, nrows: int) -> pd.DataFrame:
         result = []
         for f in funclist:
             result.append(f.get(timeout=60))
+
         pool.close()
+        gc.collect()
+        print(len(result))
         new_data = pd.concat(result, ignore_index=True, sort=False)
 
-        return new_data
+        #avoid returning dense matrix, it will flood your memory
+        v = DictVectorizer()
+        return new_data['variety'], v.fit_transform(new_data['description']), v.get_feature_names()
     return None
 
 
 s = time.time()
-assembled_data = read_assemble(700, 1400)
+assembled_data = read_assemble(1000, 130000)
 print(time.time() - s)
-if assembled_data is not None:
-    print(assembled_data.head())
+#try:
+#    print(assembled_data.head())
 
 # train = data.sample(frac=.8, axis = 0)
 # test = data.loc[~data.index.isin(train.index)]
