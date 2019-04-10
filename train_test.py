@@ -3,9 +3,14 @@ import time
 from typing import Tuple, List, Any
 
 import gc
+import graphviz
+import numpy
 import pandas as pd
 import scipy
+from sklearn import tree
 from sklearn.feature_extraction import DictVectorizer
+from sklearn.model_selection import train_test_split
+from sklearn.tree import DecisionTreeClassifier
 
 import get_names
 
@@ -18,7 +23,7 @@ def format_data(data: pd.DataFrame) -> pd.DataFrame:
         print('Error: Unspecified')
 
 
-def read_assemble(chunksize: int, nrows: int) -> Tuple[pd.Series, Any, List]:
+def read_assemble(chunksize: int, nrows: int) -> Tuple[Any, pd.Series, List]:
     if __name__ == '__main__':
         reader = pd.read_csv('resources/winemag-data-130k-v2.csv',
                              usecols=['variety', 'description'],
@@ -41,22 +46,26 @@ def read_assemble(chunksize: int, nrows: int) -> Tuple[pd.Series, Any, List]:
 
         #avoid returning dense matrix, it will flood your memory
         v = DictVectorizer()
-        return (new_data['variety'], v.fit_transform(new_data['description']), v.get_feature_names())
+        return (v.fit_transform(new_data['description']), new_data['variety'], v.get_feature_names())
     return None
 
-if __name__ == '__main__':
-    s = time.time()
-    x, y, z = read_assemble(1000, 130000)
-    print(time.time() - s)
-    print(type(x))
-    print(type(y))
-    print(type(z))
 
-# train = data.sample(frac=.8, axis = 0)
-# test = data.loc[~data.index.isin(train.index)]
-# model = DecisionTreeClassifier(max_depth = 5, criterion='entropy')
-# model.fit(train.iloc[:,16:],train['variety'])
-# predictions = model.predict(test.iloc[:,16:])
-# dot_data = tree.export_graphviz(model, label='all',  out_file=None, filled=True, rounded=True, special_characters=True, class_names=varieties, feature_names=train.iloc[:,16:].columns.values) 
-# graph = graphviz.Source(dot_data) 
-# graph.render("wine")
+
+def split_train_accuracy(X: object, y: pd.Series, test_size: float, random_state: int, depth: int) -> Tuple[object,float]:
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size = test_size, random_state = random_state)
+    model = DecisionTreeClassifier(max_depth=depth, criterion='entropy')
+    model.fit(X_train, y_train.astype(str))
+    predictions = model.predict(X_test)
+    accuracy = numpy.mean(y_test == predictions)
+    return model, accuracy
+
+if __name__ == '__main__':
+    print('Assembling Dataset at '+str(time.time()))
+    X, y, feature_names = read_assemble(1000, 13000)
+    print('Training Model at '+str(time.time()))
+    model, score = split_train_accuracy(X,y.astype(str),0.33,None,10)
+    dot_data = tree.export_graphviz(model, label='all', out_file=None, filled=True, rounded=True,
+                                    special_characters=True, class_names=list(set(feature_names)),
+                                    feature_names=feature_names)
+    graph = graphviz.Source(dot_data)
+    graph.render("wine")
