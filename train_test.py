@@ -1,8 +1,10 @@
 import multiprocessing as mp
 import time
+from typing import Tuple, List, Any
 
 import gc
 import pandas as pd
+import scipy
 from sklearn.feature_extraction import DictVectorizer
 
 import get_names
@@ -16,7 +18,7 @@ def format_data(data: pd.DataFrame) -> pd.DataFrame:
         print('Error: Unspecified')
 
 
-def read_assemble(chunksize: int, nrows: int) -> pd.DataFrame:
+def read_assemble(chunksize: int, nrows: int) -> Tuple[pd.Series, Any, List]:
     if __name__ == '__main__':
         reader = pd.read_csv('resources/winemag-data-130k-v2.csv',
                              usecols=['variety', 'description'],
@@ -33,21 +35,22 @@ def read_assemble(chunksize: int, nrows: int) -> pd.DataFrame:
             result.append(f.get(timeout=60))
 
         pool.close()
+        pool.join()
         gc.collect()
-        print(len(result))
         new_data = pd.concat(result, ignore_index=True, sort=False)
 
         #avoid returning dense matrix, it will flood your memory
         v = DictVectorizer()
-        return new_data['variety'], v.fit_transform(new_data['description']), v.get_feature_names()
+        return (new_data['variety'], v.fit_transform(new_data['description']), v.get_feature_names())
     return None
 
-
-s = time.time()
-assembled_data = read_assemble(1000, 130000)
-print(time.time() - s)
-#try:
-#    print(assembled_data.head())
+if __name__ == '__main__':
+    s = time.time()
+    x, y, z = read_assemble(1000, 130000)
+    print(time.time() - s)
+    print(type(x))
+    print(type(y))
+    print(type(z))
 
 # train = data.sample(frac=.8, axis = 0)
 # test = data.loc[~data.index.isin(train.index)]
